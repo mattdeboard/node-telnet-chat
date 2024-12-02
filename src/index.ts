@@ -1,16 +1,11 @@
-import { createRoom, rooms, type Room } from './room';
+import { createRoom, rooms, Room } from './room';
 import type { Client } from './client';
 import * as telnetlib from 'telnetlib';
 import { COMMANDS, type Command } from './commands';
 
 const clients = new Map<string, Client>();
 
-const DEFAULT_ROOM: Room = {
-  clients,
-  name: 'GeneralChat',
-  owner: null,
-  topic: 'General Chat!',
-};
+const DEFAULT_ROOM = new Room(clients, 'GeneralChat', null, 'General Chat!');
 
 rooms.set(DEFAULT_ROOM.name, DEFAULT_ROOM);
 
@@ -19,6 +14,13 @@ const server = telnetlib.createServer({}, c => {
     c.write('Welcome to the Telnet Chat Server!\n');
     promptForUsername(c);
   });
+});
+
+process.on('SIGINT', () => {
+  for (const [_, room] of rooms) {
+    if (room.flushLogs()) console.log('Flushed', room.name);
+  }
+  process.exit(0);
 });
 
 function promptForUsername(c: Client['socket']) {
@@ -32,13 +34,14 @@ function promptForUsername(c: Client['socket']) {
     } else {
       const client: Client = {
         currentRoom: DEFAULT_ROOM,
+        rooms: new Set([DEFAULT_ROOM]),
         username: poss,
         socket: c,
       };
       clients.set(client.username, client);
-      broadcast(
+      DEFAULT_ROOM.broadcast(
         client,
-        `${client.username} has joined ${client.currentRoom.name}!`,
+        `${client.username} has joined ${DEFAULT_ROOM.name}!`,
       );
 
       c.on('data', data => {
@@ -55,30 +58,20 @@ function promptForUsername(c: Client['socket']) {
 
       c.on('end', () => {
         clients.delete(client.username);
-        broadcast(client, `${client.username} disconnected from the server.`);
+        for (const room of client.rooms) {
+          room.broadcast(
+            client,
+            `${client.username} disconnected from the server.`,
+          );
+        }
       });
     }
   });
 }
 
-function broadcast(sender: Client, msg: string) {
-  const room = rooms.get(sender.currentRoom.name);
-
-  if (!room) return;
-
-  for (const [_, client] of room.clients) {
-    if (
-      sender.socket === client.socket ||
-      client.currentRoom.name !== room.name
-    )
-      continue;
-    client.socket.write(`[${new Date().toISOString()}] ${msg}\n`);
-  }
-}
-
 function handleMessage(client: Client, msg: string) {
   if (msg.length) {
-    broadcast(client, `(${client.username}): ${msg}`);
+    client.currentRoom.broadcast(client, `(${client.username}): ${msg}`);
   }
 }
 
@@ -103,6 +96,15 @@ function handleCommand(invoker: Client, command: Command, args: string[]) {
     case 'create':
       createRoom(invoker, args[0]);
       break;
+    case 'join':
+      joinRoom(invoker, args[0]);
+      break;
+    case 'part':
+      partRoom(invoker, args[0]);
+      break;
+    case 'room':
+      whichRoom(invoker);
+      break;
     case 'topic': {
       if (args.length) {
         changeTopic(invoker, invoker.currentRoom, args.join(' '));
@@ -111,12 +113,6 @@ function handleCommand(invoker: Client, command: Command, args: string[]) {
       }
       break;
     }
-    case 'join':
-      joinRoom(invoker, args[0]);
-      break;
-    case 'room':
-      whichRoom(invoker);
-      break;
     default:
       invoker.socket.write(`No handler yet for command '${command}'\n`);
       break;
@@ -129,11 +125,18 @@ export function joinRoom(client: Client, roomName: string) {
     client.socket.write('Sorry, no room by that name was found.\n');
     return;
   }
+
+  if (client.rooms.has(room)) {
+    client.socket.write("You're already in that room!\n");
+    return;
+  }
+
   client.currentRoom = room;
   room.clients.set(client.username, client);
+  client.rooms.add(room);
   client.socket.write(`Joined ${roomName}!\n`);
   readTopic(client);
-  broadcast(client, `${client.username} has joined ${roomName}!\n`);
+  room.broadcast(client, `${client.username} has joined ${roomName}!\n`);
 }
 
 export function changeTopic(client: Client, room: Room, topic: string) {
@@ -151,7 +154,10 @@ export function changeTopic(client: Client, room: Room, topic: string) {
 
   room.topic = topic;
   client.socket.write(`Successfully changed the topic to '${topic}'\n`);
-  broadcast(client, `${client.username} changed the topic to '${topic}'\n`);
+  room.broadcast(
+    client,
+    `${client.username} changed the topic to '${topic}'\n`,
+  );
 }
 
 export function readTopic(client: Client) {
@@ -163,4 +169,28 @@ export function readTopic(client: Client) {
 export function whichRoom(client: Client) {
   client.socket.write(`Your active room is ${client.currentRoom.name}\n`);
 }
-server.listen(23);
+
+export function partRoom(client: Client, roomName: string) {
+  const room = rooms.get(roomName);
+
+  if (!room) {
+    client.socket.write('Sorry, no room by that name was found.\n');
+    return;
+  }
+
+  client.rooms.delete(room);
+  client.socket.write(`Left ${room.name}.\n`);
+
+  room.clients.delete(client.username);
+  room.broadcast(client, `${client.username} has left ${room.name}!\n`);
+
+  for (const r of client.rooms) {
+    client.currentRoom = r;
+    break;
+  }
+
+  client.socket.write(`Your active room is now ${client.currentRoom.name}`);
+}
+server.listen(23, () => {
+  console.log('Now listening on port 23\n');
+});
