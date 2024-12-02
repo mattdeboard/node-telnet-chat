@@ -1,0 +1,25 @@
+{
+  "name": "telnet-server",
+  "engines": {
+    "node": ">=20.6.0"
+  },
+  "version": "1.0.0",
+  "description": "Node Telnet Server",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -b",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/telnetlib": "^1.0.3",
+    "prettier": "^3.3.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "telnetlib": "^1.0.2"
+  }
+}

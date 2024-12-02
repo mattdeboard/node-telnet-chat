@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ESNext", /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
+    "lib": [
+      "es2019",
+    ],
+    "module": "NodeNext", /* Specify what module code is generated. */
+    "rootDir": "src", /* Specify the root folder within your source files. */
+    "moduleResolution": "NodeNext",
+    "baseUrl": "./src", /* Specify the base directory to resolve non-relative module names. */
+    "types": [
+      "node"
+    ], /* Specify type package names to be included without being referenced in a source file. */
+    "outDir": "./dist", /* Specify an output folder for all emitted files. */
+    "esModuleInterop": true, /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */
+    "forceConsistentCasingInFileNames": true, /* Ensure that casing is correct in imports. */
+    /* Type Checking */
+    "strict": true, /* Enable all strict type-checking options. */
+    "noImplicitAny": true, /* Enable error reporting for expressions and declarations with an implied 'any' type. */
+    "skipLibCheck": true /* Skip type checking all .d.ts files. */
+  },
+}
