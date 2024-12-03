@@ -16,17 +16,15 @@ export type Command = keyof typeof COMMANDS;
 function isCommand(s: unknown): s is Command {
   return (s as Command) in COMMANDS;
 }
-export function parseCommand(
-  client: Client,
-  cmd: string,
-): [Command, string[]] | null {
+
+export function parseCommand(cmd: string): [Command, string[]] | null {
   const [command, ...args] = cmd.split(' ');
   if (!isCommand(command)) {
-    client.socket.write(`Unknown command ${command}\n`);
     return null;
   }
   return [command, args];
 }
+
 export function handleCommand(
   invoker: Client,
   command: Command,

@@ -44,9 +44,11 @@ const server = telnetlib.createServer({}, c => {
     c.on('data', data => {
       const msg = data.toString().trim();
       if (msg.startsWith('/')) {
-        const parsed = parseCommand(client, msg.slice(1));
+        const parsed = parseCommand(msg.slice(1));
         if (parsed) {
-          handleCommand(client, parsed[0], parsed[1]);
+          handleCommand(client, ...parsed);
+        } else {
+          client.socket.write('Unknown command.\n');
         }
       } else {
         handleMessage(client, msg);
