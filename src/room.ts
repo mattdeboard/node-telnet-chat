@@ -61,17 +61,3 @@ export class Room {
 }
 
 export const ALL_ROOMS = new Map<string, Room>();
-
-export function createRoom(creator: Client, name: string) {
-  if (ALL_ROOMS.has(name)) {
-    creator.socket.write(`A room named ${name} already exists!\n`);
-    return;
-  }
-
-  const roomClients = new Map<string, Client>();
-  roomClients.set(creator.username, creator);
-  const room = new Room(roomClients, name, creator);
-  ALL_ROOMS.set(name, room);
-  creator.currentRoom = room;
-  creator.socket.write(`Created ${name}!\n`);
-}
