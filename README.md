@@ -1,4 +1,4 @@
-# node-telnet-server
+# node-telnet-chat
 
 This repository contains a multi-user chat server with support for rooms
 built on top of the telnet protocol.
