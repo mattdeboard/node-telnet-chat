@@ -15,13 +15,15 @@ const DEFAULT_ROOM = new Room(
 ALL_ROOMS.set(DEFAULT_ROOM.name, DEFAULT_ROOM);
 
 const server = telnetlib.createServer({}, c => {
+  // This event is emitted by `telnetlib.TelnetSocket#negotiate` and
+  // signals that the Telnet server is ready to start handling data.
   c.on('negotiated', () => {
     c.write('Welcome to the Telnet Chat Server!\n');
     promptForUsername(c);
   });
 
-  // Once we set our username inside `promptForUsername`, we can finish
-  // setting up our handlers
+  // The `username set` event is emitted inside `promptForUsername`
+  // once, as you may assume, a username has successfully been set.
   c.on('username set', (username: string) => {
     const client = new Client(
       DEFAULT_ROOM,
@@ -37,12 +39,18 @@ const server = telnetlib.createServer({}, c => {
     );
     client.notifyActiveRoomChange();
     client.socket.write('Type /help to see available commands\n');
+    // With our user properly welcomed to the server and a `Client`
+    // instance stored in memory, we hand off our client to be used by
+    // listeners for the socket's standard `data` and `end` event
+    // listeners.
     client.socket.emit('client constructed', client);
   });
 
-  // Now we have our client and can attach our 'data' and 'end' handlers
-  // to the socket, since the listeners for each of those need handles
-  // for the rooms the client is in.
+  // This event, emitted inside the `username set` listener, signals
+  // that we have our client and can attach our 'data' and 'end'
+  // handlers to the socket. We need the client in scope here since the
+  // listeners for each of those need handles for the rooms the client
+  // is in.
   c.on('client constructed', (client: Client) => {
     c.on('data', data => {
       const msg = data.toString().trim();
