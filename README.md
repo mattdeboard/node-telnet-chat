@@ -4,7 +4,10 @@ This repository contains a multi-user chat server with support for rooms
 built on top of the telnet protocol.
 
 We leverage the [`telnetlib`](https://www.npmjs.com/package/telnetlib)
-library to handle the Telnet protocol details.
+library to handle the Telnet protocol details. It provides an
+implementation of Node's
+[`net.Server`](https://nodejs.org/api/net.html#class-netserver) TCP
+server that understands Telnet datagrams.
 
 ## Getting Started
 
