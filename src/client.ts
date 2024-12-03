@@ -3,7 +3,10 @@ import { Room, ALL_ROOMS } from './room';
 
 export class Client {
   constructor(
+    /** The `currentRoom` is the only channel the client can target with
+actions (e.g. sending chats, changing the topic). */
     public currentRoom: Room,
+    /** `rooms` is the set of all rooms the client is in. */
     public rooms: Set<Room>,
     public socket: Socket & telnetlib.TelnetSocket,
     public username: string,

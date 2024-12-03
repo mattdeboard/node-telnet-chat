@@ -40,6 +40,9 @@ const server = telnetlib.createServer({}, c => {
     client.socket.emit('client constructed', client);
   });
 
+  // Now we have our client and can attach our 'data' and 'end' handlers
+  // to the socket, since the listeners for each of those need handles
+  // for the rooms the client is in.
   c.on('client constructed', (client: Client) => {
     c.on('data', data => {
       const msg = data.toString().trim();
