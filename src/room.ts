@@ -16,13 +16,13 @@ export class Room {
     this.chatLog = `./${name}.log`;
   }
 
-  broadcast(sender: Client, msg: string) {
-    const chatMsg = `[${new Date().toISOString()}] ${msg}\n`;
+  broadcast(sender: Client, msg: string, isSystemMessage = false) {
+    const chatMsg = `[${new Date().toISOString()}::<${this.name}>] ${msg.trim()}\n`;
 
     for (const [_, client] of this.clients) {
       if (
         sender.socket === client.socket ||
-        client.currentRoom.name !== this.name
+        (isSystemMessage && client.currentRoom.name !== this.name)
       ) {
         continue;
       }
@@ -40,7 +40,7 @@ export class Room {
     }
   }
 
-  flushLogs() {
+  flushLogsSync() {
     if (this.logBuffer.length) {
       fs.writeFileSync(this.chatLog, `\n${this.logBuffer.join('\n')}`, {
         flag: 'a+',
@@ -60,10 +60,10 @@ export class Room {
   }
 }
 
-export const rooms = new Map<string, Room>();
+export const ALL_ROOMS = new Map<string, Room>();
 
 export function createRoom(creator: Client, name: string) {
-  if (rooms.has(name)) {
+  if (ALL_ROOMS.has(name)) {
     creator.socket.write(`A room named ${name} already exists!\n`);
     return;
   }
@@ -71,7 +71,7 @@ export function createRoom(creator: Client, name: string) {
   const roomClients = new Map<string, Client>();
   roomClients.set(creator.username, creator);
   const room = new Room(roomClients, name, creator);
-  rooms.set(name, room);
+  ALL_ROOMS.set(name, room);
   creator.currentRoom = room;
   creator.socket.write(`Created ${name}!\n`);
 }
